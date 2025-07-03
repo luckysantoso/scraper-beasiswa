@@ -1,4 +1,3 @@
-# File: 1_Scraper_Beasiswa.py
 import streamlit as st
 import pandas as pd
 from selenium import webdriver
@@ -11,9 +10,11 @@ from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import time
 import json
+import platform  # <-- Impor baru
+import traceback # <-- Impor baru
 
 # =============================================================================
-# Konfigurasi Selenium
+# Konfigurasi Selenium dengan Deteksi OS untuk Deployment
 # =============================================================================
 @st.cache_resource
 def get_driver():
@@ -23,16 +24,28 @@ def get_driver():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
+
     try:
-        service = Service(ChromeDriverManager().install())
+        # --- LOGIKA UNTUK DEPLOYMENT ---
+        if platform.system() == 'Linux':
+            # Jika berjalan di Streamlit Cloud (Linux)
+            st.info("Menjalankan di lingkungan Linux (Deployment). Menggunakan driver sistem.")
+            service = Service(executable_path="/usr/bin/chromedriver")
+        else:
+            # Jika berjalan di Windows/Mac (Lokal)
+            st.info("Menjalankan di lingkungan lokal. Menggunakan WebDriver Manager.")
+            service = Service(ChromeDriverManager().install())
+
         driver = webdriver.Chrome(service=service, options=options)
         return driver
+        
     except Exception as e:
         st.error(f"Gagal menginisialisasi WebDriver: {e}")
+        st.code(traceback.format_exc()) # Menampilkan traceback lengkap untuk debug
         return None
 
 # =============================================================================
-# FUNGSI PARSING
+# FUNGSI PARSING (Tidak Berubah)
 # =============================================================================
 def parse_scholarships(page_source):
     soup = BeautifulSoup(page_source, 'html.parser')
@@ -73,7 +86,7 @@ def parse_scholarships(page_source):
     return scholarships
 
 # =============================================================================
-# FUNGSI SCRAPING
+# FUNGSI SCRAPING (Tidak Berubah)
 # =============================================================================
 def scrape_month_data(month_num, driver):
     base_url = "https://luarkampus.id/beasiswa"
@@ -120,7 +133,7 @@ def scrape_month_data(month_num, driver):
     return all_scholarships
 
 # =============================================================================
-# Antarmuka Streamlit untuk Halaman Scraper
+# Antarmuka Streamlit untuk Halaman Scraper (Tidak Berubah)
 # =============================================================================
 st.set_page_config(page_title="Scraper Beasiswa", layout="wide")
 
@@ -130,7 +143,6 @@ st.markdown("Gunakan halaman ini untuk mengambil data beasiswa terbaru. Setelah 
 month_map = {'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4, 'Mei': 5, 'Juni': 6, 'Juli': 7, 'Agustus': 8, 'September': 9, 'Oktober': 10, 'November': 11, 'Desember': 12}
 selected_months_names = st.multiselect('Pilih Bulan untuk di-Scrape:', options=list(month_map.keys()), default=['Januari'])
 
-# Inisialisasi session_state jika belum ada
 if 'scraped_data' not in st.session_state:
     st.session_state.scraped_data = pd.DataFrame()
 
@@ -153,7 +165,6 @@ if st.button('Mulai Scraping', type="primary"):
             if all_data:
                 df = pd.DataFrame(all_data)
                 df_unique = df.drop_duplicates(subset=['Link'])
-                # Simpan data ke session_state agar bisa diakses halaman lain
                 st.session_state.scraped_data = df_unique
                 st.success(f"Scraping selesai! {len(df_unique)} beasiswa unik ditemukan. Silakan cek halaman Analisis.")
             else:
@@ -163,7 +174,6 @@ if st.button('Mulai Scraping', type="primary"):
         else:
             st.error("Gagal memulai driver. Proses dibatalkan.")
 
-# Tampilkan preview data di halaman ini
 if not st.session_state.scraped_data.empty:
     st.subheader("📝 Preview Data Hasil Scraping")
     st.dataframe(st.session_state.scraped_data.head())
