@@ -29,11 +29,9 @@ def get_driver():
         # --- LOGIKA UNTUK DEPLOYMENT ---
         if platform.system() == 'Linux':
             # Jika berjalan di Streamlit Cloud (Linux)
-            st.info("Menjalankan di lingkungan Linux (Deployment). Menggunakan driver sistem.")
             service = Service(executable_path="/usr/bin/chromedriver")
         else:
             # Jika berjalan di Windows/Mac (Lokal)
-            st.info("Menjalankan di lingkungan lokal. Menggunakan WebDriver Manager.")
             service = Service(ChromeDriverManager().install())
 
         driver = webdriver.Chrome(service=service, options=options)
