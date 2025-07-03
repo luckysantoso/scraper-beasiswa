@@ -10,8 +10,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import time
 import json
-import platform  # <-- Impor baru
-import traceback # <-- Impor baru
+import platform  
+import traceback
 
 # =============================================================================
 # Konfigurasi Selenium dengan Deteksi OS untuk Deployment
@@ -26,7 +26,6 @@ def get_driver():
     options.add_argument("--window-size=1920,1080")
 
     try:
-        # --- LOGIKA UNTUK DEPLOYMENT ---
         if platform.system() == 'Linux':
             # Jika berjalan di Streamlit Cloud (Linux)
             service = Service(executable_path="/usr/bin/chromedriver")

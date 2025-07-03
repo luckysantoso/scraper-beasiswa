@@ -7,64 +7,48 @@ st.set_page_config(page_title="Analisis Beasiswa", layout="wide")
 
 st.title("📊 Analisis dan Filter Beasiswa")
 
-# Cek apakah data sudah ada di session state
 if 'scraped_data' not in st.session_state or st.session_state.scraped_data.empty:
     st.warning("Data belum tersedia. Silakan jalankan scraper di halaman 'Scraper Beasiswa' terlebih dahulu.")
-    st.stop() # Hentikan eksekusi jika tidak ada data
+    st.stop() 
 
-# Ambil data dari session state
 df = st.session_state.scraped_data
 
 # --- Bagian Filter Berdasarkan Jenjang ---
 st.header("Filter Beasiswa Berdasarkan Jenjang")
-
-# Karena satu beasiswa bisa memiliki beberapa jenjang (e.g., "S1, S2"),
-# kita perlu memprosesnya terlebih dahulu.
-# Kita buat list semua jenjang yang unik dari data.
 all_degrees = set()
 for s in df['Jenjang'].dropna():
     degrees_list = [degree.strip() for degree in s.split(',')]
     all_degrees.update(degrees_list)
 
-# Hapus string kosong jika ada
 if '' in all_degrees:
     all_degrees.remove('')
 
-# Buat multiselect untuk filter
 selected_degrees = st.multiselect(
     "Pilih Jenjang yang ingin ditampilkan:",
     options=sorted(list(all_degrees)),
-    default=sorted(list(all_degrees)) if all_degrees else [] # Default pilih semua
+    default=sorted(list(all_degrees)) if all_degrees else [] 
 )
 
-# Filter DataFrame berdasarkan jenjang yang dipilih
 if selected_degrees:
-    # Menggunakan regex untuk mencari beasiswa yang mengandung salah satu jenjang yang dipilih
-    # `|` berfungsi sebagai "OR" dalam regex
     filtered_df = df[df['Jenjang'].str.contains('|'.join(selected_degrees), na=False)]
 else:
-    # Jika tidak ada yang dipilih, tampilkan semua (atau kosong jika pengguna menghapus semua pilihan)
     filtered_df = df if not all_degrees else pd.DataFrame(columns=df.columns)
 
 st.write(f"Menampilkan {len(filtered_df)} dari {len(df)} beasiswa.")
 st.dataframe(filtered_df)
 
-
-# --- Bagian Visualisasi (dari kode sebelumnya, bisa diadaptasi) ---
 st.header("Visualisasi Data")
-
-# Pisahkan menjadi dua kolom untuk visualisasi yang berbeda
 col1, col2 = st.columns(2)
 
 with col1:
-    # Visualisasi Negara (berdasarkan data yang sudah difilter)
+    # Visualisasi Negara
     st.subheader("Sebaran Beasiswa per Negara")
     if not filtered_df.empty:
         country_counts = filtered_df['Negara'].value_counts().reset_index()
         country_counts.columns = ['Negara', 'Jumlah']
         
         fig_country = px.bar(
-            country_counts.head(15), # Tampilkan 15 teratas
+            country_counts.head(15), 
             x='Negara',
             y='Jumlah',
             title='Top 15 Negara Tujuan Beasiswa',
@@ -87,11 +71,11 @@ with col2:
         degree_counts.columns = ['Jenjang', 'Jumlah']
 
         fig_degree = px.pie(
-            degree_counts.head(10), # Tampilkan 10 teratas
+            degree_counts.head(10), 
             names='Jenjang',
             values='Jumlah',
             title='Top 10 Jenjang Beasiswa Paling Populer',
-            hole=0.3 # Membuatnya menjadi donut chart
+            hole=0.3 
         )
         st.plotly_chart(fig_degree, use_container_width=True)
     else:
